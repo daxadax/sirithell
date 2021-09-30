@@ -20,7 +20,6 @@ class CharacterActions
 
   def roll(action, character)
     stats = characters.fetch(character)
-
     natural_roll = roll_d20
 
     result = if natural_roll == 1
