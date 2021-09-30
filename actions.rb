@@ -6,28 +6,40 @@ require 'pp'
 class CharacterActions
   CHARACTERS = './characters.csv'
 
+  def self.print_menu
+    print "\nAvailable commands:\n\n"
+    print "- characters: list characters with stat blocks\n"
+    print "- freeroll(character, *attributes): free roll a check against given attributes for the given character\n"
+    print "- roll(character, action): roll predefined action checks for the given character\n"
+    print "--- perception\n"
+  end
+
   def self.print_characters
     pp new.characters
   end
 
-  def self.roll(action, character)
-    new.roll(action, character)
+  def self.roll(character:, attributes: [], action: nil)
+    new.roll(character, attributes, action)
   end
 
   def initialize
-    @data = CSV.read(CHARACTERS, headers: true)
+    @character_data = CSV.read(CHARACTERS, headers: true)
   end
 
-  def roll(action, character)
-    stats = characters.fetch(character)
+  def roll(character, attributes, action)
     natural_roll = roll_d20
-
     result = if natural_roll == 1
                'a critical failure'
              elsif natural_roll == 20
                'a critical success'
              else
-               bonus = public_send(action, stats)
+              stats = characters.fetch(character)
+              bonus = if action
+                        public_send(action, stats)
+                      else
+                        attributes.map { |attr| stats[attr.to_sym] }.sum
+                      end
+
                operator = bonus.negative? ? '-' : '+'
                total = natural_roll + bonus
 
@@ -42,7 +54,7 @@ class CharacterActions
   end
 
   def characters
-    @characters ||= data.inject({}) do |result, row|
+    @characters ||= character_data.inject({}) do |result, row|
 
       result[row['name']] = {
         str: row['str'],
@@ -64,13 +76,22 @@ class CharacterActions
   end
 
   private
-  attr_reader :data
+  attr_reader :character_data
 
   def roll_d20
     Random.rand(1..20)
   end
 end
 
-# CharacterActions.print_characters
-CharacterActions.roll(ARGV[0], ARGV[1])
-
+case ARGV[0]
+when 'help'
+  CharacterActions.print_menu
+when 'characters'
+  CharacterActions.print_characters
+when 'roll'
+  CharacterActions.roll(character: ARGV[1], action: ARGV[2])
+when 'freeroll'
+  CharacterActions.roll(character: ARGV.delete_at(1), attributes: ARGV[1..-1])
+else
+  CharacterActions.print_menu
+end
