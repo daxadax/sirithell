@@ -22,18 +22,20 @@ class CharacterActions
     stats = characters.fetch(character)
 
     natural_roll = roll_d20
-    bonus = public_send(action, stats)
-    total = natural_roll + bonus
 
     result = if natural_roll == 1
                'a critical failure'
              elsif natural_roll == 20
                'a critical success'
              else
-               "#{total} (#{natural_roll} + #{bonus})"
+               bonus = public_send(action, stats)
+               operator = bonus.negative? ? '-' : '+'
+               total = natural_roll + bonus
+
+               "#{total} (#{natural_roll} #{operator} #{bonus.abs})"
              end
 
-    print "\n#{character.capitalize} rolled #{result} for #{action}\n\n"
+    print "\n#{character.capitalize} rolled #{result}\n\n"
   end
 
   def perception(stats)
